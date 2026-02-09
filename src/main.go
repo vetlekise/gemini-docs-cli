@@ -1,53 +1,53 @@
 package main
 
-// Import-blokk
-/*
-  Biblioteker:
-  - "strings", "fmt", "log"
-  - "os", "path/filepath", "flag"
-  - "context"
-  - "github.com/google/generative-ai-go/genai"
-  - "google.golang.org/api/option"
-*/
+import (
+	"context"
+	"flag"
+	"fmt"
+	"os"
+	// "google.golang.org/api/option"
+	"google.golang.org/genai"
+	"log"
+	"path/filepath"
+	// "strings"
+)
 
 func main() {
-	// ---------------------------------------------------------
-	// 1. OPPSETT OG KONFIGURASJON
-	// ---------------------------------------------------------
-	// flag.String("path", ...) -> Hvor er app-koden?
-	// flag.String("model", ...)
-	// flag.Parse()
 
-	// Hent API Key fra os.Getenv.
-	// Hvis tom -> log.Fatal.
+	// Initialize flags and flag values
+	pathPtr := flag.String("path", "./src", "Path to your application code.")
+	// modelPtr := flag.String("model", "gemini-3-flash-preview", "Choose a Google Gemini AI model.")
+	flag.Parse()
 
-	// ---------------------------------------------------------
-	// 2. INITIALISER GEMINI KLIENT
-	// ---------------------------------------------------------
-	// context.Background()
-	// genai.NewClient(...)
-	// defer client.Close()
+	targetDirectory := *pathPtr
 
-	// ---------------------------------------------------------
-	// 3. LES INN MALENE (TEMPLATES)
-	// ---------------------------------------------------------
-	// os.ReadFile("templates/system_instruction.md")
-	// os.ReadFile("templates/output_template.md")
+	// Initialize Gemini client
+	ctx := context.Background()
+	// The client gets the API key from the environment variable `GEMINI_API_KEY`.
+	client, err := genai.NewClient(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// ---------------------------------------------------------
-	// 3.5. LES DESIGNBESLUTNINGER (NY! - ADR)
-	// ---------------------------------------------------------
-	// Vi ser etter mappen "docs/adr" inne i app-repoet.
-	// adrPath := filepath.Join(targetDirectory, "docs", "adr")
+	// Read template files
+	systemInstruction, err := os.ReadFile("templates/system_instruction.d")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Kaller ny hjelpefunksjon (se bunnen av filen).
-	// adrContext := collectDesignDecisions(adrPath)
+	outputTemplate, err := os.ReadFile("templates/output_template.md")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// ---------------------------------------------------------
-	// 4. SAMLE KODEBASEN (SCANNER)
-	// ---------------------------------------------------------
-	// codeContext, err := scanFiles(targetDirectory)
-	// Sjekk feil.
+	// Read Architectural Decision Records (ADRs)
+	adrPath := filepath.Join(targetDirectory, "docs", "adr")
+	adrContext := collectDesignDecisions(adrPath)
+
+	codeContext, err := scanFiles(targetDirectory)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// ---------------------------------------------------------
 	// 5. BYGG PROMPTEN (OPPDATERT SANDWICH)
@@ -81,6 +81,17 @@ func main() {
 	// model := client.GenerativeModel(modelName)
 	// resp, err := model.GenerateContent(ctx, genai.Text(fullPrompt))
 	// Hent tekst fra responsen.
+
+	result, err := client.Models.GenerateContent(
+		ctx,
+		"gemini-3-flash-preview",
+		genai.Text("Explain why cats are cool in one sentence."),
+		nil,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result.Text())
 
 	// ---------------------------------------------------------
 	// 7. LAGRE RESULTATET
