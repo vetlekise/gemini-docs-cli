@@ -1,15 +1,16 @@
 package main
 
 import (
-	"context"
+	//"context"
 	"flag"
-	"fmt"
+	//"fmt"
 	"os"
+	"strings"
+
 	// "google.golang.org/api/option"
-	"google.golang.org/genai"
 	"log"
 	"path/filepath"
-	// "strings"
+	//"google.golang.org/genai"
 )
 
 func main() {
@@ -21,13 +22,13 @@ func main() {
 
 	targetDirectory := *pathPtr
 
-	// Initialize Gemini client
-	ctx := context.Background()
-	// The client gets the API key from the environment variable `GEMINI_API_KEY`.
-	client, err := genai.NewClient(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// // Initialize Gemini client
+	// ctx := context.Background()
+	// // The client gets the API key from the environment variable `GEMINI_API_KEY`.
+	// client, err := genai.NewClient(ctx, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	// Read template files
 	systemInstruction, err := os.ReadFile("templates/system_instruction.d")
@@ -40,14 +41,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Read Architectural Decision Records (ADRs)
-	adrPath := filepath.Join(targetDirectory, "docs", "adr")
-	adrContext := collectDesignDecisions(adrPath)
-
+	// Read source code
 	codeContext, err := scanFiles(targetDirectory)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Read Architectural Decision Records (ADRs)
+	adrPath := filepath.Join(targetDirectory, "docs", "adr")
+	adrContext := collectDesignDecisions(adrPath)
 
 	// ---------------------------------------------------------
 	// 5. BYGG PROMPTEN (OPPDATERT SANDWICH)
@@ -82,16 +84,16 @@ func main() {
 	// resp, err := model.GenerateContent(ctx, genai.Text(fullPrompt))
 	// Hent tekst fra responsen.
 
-	result, err := client.Models.GenerateContent(
-		ctx,
-		"gemini-3-flash-preview",
-		genai.Text("Explain why cats are cool in one sentence."),
-		nil,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(result.Text())
+	// result, err := client.Models.GenerateContent(
+	// 	ctx,
+	// 	"gemini-3-flash-preview",
+	// 	genai.Text("Explain why cats are cool in one sentence."),
+	// 	nil,
+	// )
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println(result.Text())
 
 	// ---------------------------------------------------------
 	// 7. LAGRE RESULTATET
@@ -101,47 +103,92 @@ func main() {
 	// Print "Done".
 }
 
-// ---------------------------------------------------------
-// HJELPEFUNKSJON 1: FIL-SCANNER (Rekursiv)
-// ---------------------------------------------------------
+// Helper function: Recursive file scanner
 func scanFiles(rootPath string) (string, error) {
-	// strings.Builder...
-	// filepath.WalkDir(rootPath, func(...) {
-	// 1. Ignorer .git, node_modules, etc (return filepath.SkipDir)
-	// 2. Sjekk filendelser (.go, .tf, .yaml)
-	// 3. Les fil
-	// 4. Formater: "--- FILE: [navn] ---\n [innhold]"
-	// })
-	// return builder.String()
+	var sb strings.Builder
+
+	// Blacklist directories
+	ignoreMap := map[string]bool{
+		".git": true, "node_modules": true,
+	}
+
+	// Whitelist file extensions
+	allowedExtMap := map[string]bool{
+		".go": true, ".tf": true, ".yaml": true, ".py": true, ".md": true,
+	}
+
+	// Walk through directories and filter them
+	err := filepath.WalkDir(rootPath, func(path string, dir os.DirEntry, err error) error {
+
+		if err != nil {
+			return nil
+		}
+
+		// Check if it is a directory and filter out blacklist
+		if dir.IsDir() {
+			if ignoreMap[dir.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		ext := filepath.Ext(path)
+
+		// Check if file extension is in our whitelist
+		if allowedExtMap[ext] {
+
+			// Read files
+			content, err := os.ReadFile(path)
+			if err != nil {
+				// Skip file if we're not able to read
+				return nil
+			}
+
+			// Format the header so the AI knows what file it is and add it to built string
+			// "--- FILE: src/main.go ---"
+			sb.WriteString("\n--- FILE: " + path + " ---\n")
+
+			// Add content from read files to built string
+			sb.Write(content)
+
+			// Add new line for cleaner look
+			sb.WriteString("\n")
+		}
+
+		return nil
+	})
+
+	return sb.String(), err
 }
 
 // ---------------------------------------------------------
 // HJELPEFUNKSJON 2: LES DESIGNBESLUTNINGER (Flat liste)
 // ---------------------------------------------------------
-func collectDesignDecisions(adrPath string) string {
-	// 1. SJEKK OM MAPPEN FINNES
-	// GO-LÆRDOM: Bruk os.Stat() for å sjekke eksistens.
-	// if _, err := os.Stat(adrPath); os.IsNotExist(err) {
-	//     return "No ADRs found." // Helt ok, vi bare returnerer tomt.
-	// }
+// Helper function: File scanning a specific directory
+// func collectDesignDecisions(adrPath string) string {
+// 	// 1. SJEKK OM MAPPEN FINNES
+// 	// GO-LÆRDOM: Bruk os.Stat() for å sjekke eksistens.
+// 	// if _, err := os.Stat(adrPath); os.IsNotExist(err) {
+// 	//     return "No ADRs found." // Helt ok, vi bare returnerer tomt.
+// 	// }
 
-	// 2. LES MAPPEN (IKKE REKURSIVT)
-	// GO-LÆRDOM: Bruk os.ReadDir() når du bare vil ha filene i én mappe.
-	// entries, err := os.ReadDir(adrPath)
+// 	// 2. LES MAPPEN (IKKE REKURSIVT)
+// 	// GO-LÆRDOM: Bruk os.ReadDir() når du bare vil ha filene i én mappe.
+// 	// entries, err := os.ReadDir(adrPath)
 
-	// strings.Builder...
+// 	// strings.Builder...
 
-	// 3. LOOP GJENNOM FILENE
-	// for _, entry := range entries {
-	//     if entry.IsDir() { continue } // Hopp over undermapper
-	//     if !strings.HasSuffix(entry.Name(), ".md") { continue } // Kun markdown
+// 	// 3. LOOP GJENNOM FILENE
+// 	// for _, entry := range entries {
+// 	//     if entry.IsDir() { continue } // Hopp over undermapper
+// 	//     if !strings.HasSuffix(entry.Name(), ".md") { continue } // Kun markdown
 
-	//     fullPath := filepath.Join(adrPath, entry.Name())
-	//     content, _ := os.ReadFile(fullPath)
+// 	//     fullPath := filepath.Join(adrPath, entry.Name())
+// 	//     content, _ := os.ReadFile(fullPath)
 
-	//     sb.WriteString("\n--- DECISION RECORD: " + entry.Name() + " ---\n")
-	//     sb.Write(content)
-	// }
+// 	//     sb.WriteString("\n--- DECISION RECORD: " + entry.Name() + " ---\n")
+// 	//     sb.Write(content)
+// 	// }
 
-	// return sb.String()
-}
+// 	// return sb.String()
+// }
