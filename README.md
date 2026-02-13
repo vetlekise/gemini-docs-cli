@@ -36,8 +36,8 @@ jobs:
           target_dir: '.'
 ```
 
-[!TIP]
-Chain this action with peter-evans/create-pull-request to automatically open a pull request whenever the generated documentation changes.
+> [!TIP]
+> Chain this action with peter-evans/create-pull-request to automatically open a pull request whenever the generated documentation changes.
 
 ### Action Inputs
 | Name | Description | Required | Default |
