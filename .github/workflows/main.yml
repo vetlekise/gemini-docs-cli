@@ -14,16 +14,14 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      # Her bruker du din egensnekrede Action!
       - name: Run Gemini Docs
         uses: vetle-dev/gemini-docs-cli@main
         with:
           api_key: ${{ secrets.GEMINI_API_KEY }}
           model: 'gemini-1.5-pro'
 
-      # Denne fanger opp AI_GENERATED.md og lager en PR av det automatisk
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "docs: update AI generated architecture docs"
           title: "🤖 Auto-Generated Architecture Docs"
