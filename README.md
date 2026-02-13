@@ -37,7 +37,7 @@ jobs:
 ```
 
 > [!TIP]
-> Chain this action with peter-evans/create-pull-request to automatically open a pull request whenever the generated documentation changes.
+> Chain this action with `peter-evans/create-pull-request` to automatically open a pull request whenever the generated documentation changes.
 
 ### Action Inputs
 | Name | Description | Required | Default |
