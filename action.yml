@@ -1,0 +1,34 @@
+name: 'Gemini Architecture Docs'
+description: 'Generates AI documentation and C4 diagrams using Google Gemini'
+branding:
+  icon: 'book-open'
+  color: 'blue'
+
+inputs:
+  target_dir:
+    description: 'Directory to scan (relative to repository root)'
+    required: false
+    default: '.'
+  model:
+    description: 'Gemini model to use'
+    required: false
+    default: 'gemini-3-flash-preview'
+  api_key:
+    description: 'Google Gemini API Key'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25'
+
+    - name: Run Gemini Docs Generator
+      shell: bash
+      env:
+        GEMINI_API_KEY: ${{ inputs.api_key }}
+      run: |
+        cd ${{ github.action_path }}
+        go run src/main.go -path ${{ github.workspace }}/${{ inputs.target_dir }} -model ${{ inputs.model }}
