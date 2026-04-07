@@ -73,5 +73,5 @@ go run src/main.go -path ./my-app -model gemini-3-flash-preview
 
 5. **Output**: Saves the result to `docs/AI_GENERATED.md`.
 
-[!IMPORTANT]
-Data Privacy: This tool sends the raw text of scanned source code and ADRs to a third-party LLM (Google Gemini API). Ensure you do not have hardcoded secrets committed to your repository before running the scan.
+> [!IMPORTANT]
+> Data Privacy: This tool sends the raw text of scanned source code and ADRs to a third-party LLM (Google Gemini API). Ensure you do not have hardcoded secrets committed to your repository before running the scan.
